@@ -3,10 +3,12 @@ import time
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+import Globals as gb
+import Accessories as ac
 
 class SpriteClass:
     #This is built to contain only one animation cycle. For multiple animation cycles of the same "character", use different objects
-    def __init__(self, path_to_file):
+    def __init__(self, path_to_file,mov_gesture):
         self.animated = False
         if "spritesheet" in path_to_file:
             self.animated = True
@@ -17,6 +19,7 @@ class SpriteClass:
         self._scale_x = 1.0      # 1.0 = original size
         self._scale_y = 1.0
         self._angle = 0          # degrees
+        self.move_gesture = mov_gesture
 
     def setOpacity(self,opacity_):
         if 1>=opacity_>=0:
@@ -66,3 +69,43 @@ class SpriteClass:
         # 4. Blend onto the frame at the sprite's position
         frame = self._overlay(frame, img, self._x, self._y)
         return frame
+
+    def isPointInside(self, point_x, point_y, margin=20):
+        h, w = self.spriteImage.shape[:2]
+        box_w = int(w * self._scale_x)
+        box_h = int(h * self._scale_y)
+
+        inside_x = (self._x - margin) <= point_x <= (self._x + box_w + margin)
+        inside_y = (self._y - margin) <= point_y <= (self._y + box_h + margin)
+
+        return inside_x and inside_y
+
+    def getSize(self):
+        h, w = self.spriteImage.shape[:2]
+        box_w = int(w * self._scale_x)
+        box_h = int(h * self._scale_y)
+        return box_w, box_h
+
+    def setPositionCentered(self, center_x, center_y):
+        box_w, box_h = self.getSize()
+        self.setPosition(center_x - box_w // 2, center_y - box_h // 2)
+
+    def MoveL(self,gesture):
+        if gesture == self.move_gesture:
+            fingerX = ac.normalizeX(gb.left_landmarks[8].x)
+            fingerY = ac.normalizeY(gb.left_landmarks[8].y)
+
+            if self.isPointInside(fingerX,fingerY):
+                self.setPositionCentered(fingerX,fingerY)
+            return True
+        return False
+    
+    def MoveR(self,gesture):
+        if gesture == self.move_gesture:
+            fingerX = ac.normalizeX(gb.right_landmarks[8].x)
+            fingerY = ac.normalizeY(gb.right_landmarks[8].y)
+
+            if self.isPointInside(fingerX,fingerY):
+                self.setPositionCentered(fingerX,fingerY)
+            return True
+        return False

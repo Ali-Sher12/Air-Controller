@@ -1,0 +1,10 @@
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+waitKeyDelayMs = 1
+time_secs = 0
+left_landmarks = None
+right_landmarks = None
+doVideoStream = False
+printDebug = False
+DrawSkeleton = True
+RenderVideo = True
