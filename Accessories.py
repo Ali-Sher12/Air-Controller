@@ -31,22 +31,26 @@ def drawConnections(hand,frame,connections):
 def getVector(p1, p2):
     return (p2.x - p1.x, p2.y - p1.y, p2.z - p1.z)
 
-def dot_product(v1, v2):
+def getDot_product(v1, v2):
     return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]
 
-def magnitude(v):
+def getMagnitude(v):
     return math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
 
-def angle_between(p1, p2, p3):
-    # p2 is the joint (the "hinge" point)
-    v1 = getVector(p2, p1)   # vector from joint to first point
-    v2 = getVector(p2, p3)   # vector from joint to second point
+def getAngle(p1, p2, p3):
+    # p3 is the base point. Can or cannot be collinear iwth p2 (toggle)
+    if gb.isAngleBaseHorizontal:
+        p3.y = p2.y
+    v1 = getVector(p2, p1)
+    v2 = getVector(p2, p3)
 
-    dot = dot_product(v1, v2)
-    mag = magnitude(v1) * magnitude(v2)
+    dot = getDot_product(v1, v2)
+    mag = getMagnitude(v1) * getMagnitude(v2)
 
     cos_angle = dot / mag
     cos_angle = max(-1.0, min(1.0, cos_angle))   # clamp to avoid math errors
 
     angle_radians = math.acos(cos_angle)
+
+    print(math.degrees(angle_radians))
     return math.degrees(angle_radians)

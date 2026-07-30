@@ -28,6 +28,7 @@ def indexFingerPointedANY(detected_hand_points,hand_iden):
     thmb_mid = normalized_distance3D(detected_hand_points[2],detected_hand_points[12],detected_hand_points)
 
     if 150>=ind_mid>=90 and 160>=ind_wrd>=100 and 175>=ind_pnky>=100 and 60>=thmb_mid>=0:
+        ac.getAngle(detected_hand_points[8],detected_hand_points[5],detected_hand_points[13])
         return "Index_Up"
     return "None"
 
