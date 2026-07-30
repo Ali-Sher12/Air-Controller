@@ -1,15 +1,11 @@
 import cv2
-import time
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 import Globals as gb
 import Accessories as ac
 
 class SpriteClass:
     #This is built to contain only one animation cycle. For multiple animation cycles of the same "character", use different objects
     #vibecoded because why not
-    def __init__(self, path_to_file,mov_gesture):
+    def __init__(self, path_to_file,gestureList,):
         self.animated = False
         if "spritesheet" in path_to_file:
             self.animated = True
@@ -20,7 +16,7 @@ class SpriteClass:
         self._scale_x = 1.0      # 1.0 = original size
         self._scale_y = 1.0
         self._angle = 0          # degrees
-        self.move_gesture = mov_gesture
+        self.move_gestures = gestureList.copy()
 
     def setOpacity(self,opacity_):
         if 1>=opacity_>=0:
@@ -92,7 +88,7 @@ class SpriteClass:
         self.setPosition(center_x - box_w // 2, center_y - box_h // 2)
 
     def MoveL(self,gesture):
-        if gesture == self.move_gesture:
+        if gesture in self.move_gestures:
             fingerX = ac.normalizeX(gb.left_landmarks[8].x)
             fingerY = ac.normalizeY(gb.left_landmarks[8].y)
 
@@ -102,7 +98,7 @@ class SpriteClass:
         return False
     
     def MoveR(self,gesture):
-        if gesture == self.move_gesture:
+        if gesture in self.move_gestures:
             fingerX = ac.normalizeX(gb.right_landmarks[8].x)
             fingerY = ac.normalizeY(gb.right_landmarks[8].y)
 

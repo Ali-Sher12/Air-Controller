@@ -12,7 +12,7 @@ if __name__ == "__main__":
     pydirectinput.FAILSAFE = False
     if gb.doVideoStream:
         url = "http://192.168.18.10:8080/video"
-    sampleSprite = SpriteClass("Assets/Images/sample.png","Index_Up")
+    sampleSprite = SpriteClass("Assets/Images/sample.png",["Pointing_Up","Index_Up"])
     sampleSprite.setPosition(0, 0)
     sampleSprite.scale(1.5, 1.5)
     sampleSprite.setOpacity(1)
@@ -24,6 +24,7 @@ if __name__ == "__main__":
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, gb.SCREEN_WIDTH )
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,gb.SCREEN_HEIGHT)
 
+    cap.set(cv2.CAP_PROP_FPS, 60)
     fps = cap.get(cv2.CAP_PROP_FPS)
     out = cv2.VideoWriter("output.mp4",cv2.VideoWriter_fourcc(*'mp4v'),fps,(gb.SCREEN_WIDTH, gb.SCREEN_HEIGHT))
     #setup

@@ -1,10 +1,7 @@
 import cv2
-import math
-import time
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from Sprite import SpriteClass
 import Globals as gb
 import Accessories as ac
 import CustomGesturesStatic as cgs
@@ -40,7 +37,7 @@ class GesturesAll:
     def identifyCustomGesture(self,detected_hand_points,hand_iden):
         holder = cgs.indexFingerPointedANY(detected_hand_points,hand_iden)
         if holder != "None":
-            print("Debug Print ",holder)
+#            print("Debug Print ",holder)
             return holder
         return "None"
 
