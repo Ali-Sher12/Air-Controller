@@ -8,6 +8,7 @@ import Accessories as ac
 
 class SpriteClass:
     #This is built to contain only one animation cycle. For multiple animation cycles of the same "character", use different objects
+    #vibecoded because why not
     def __init__(self, path_to_file,mov_gesture):
         self.animated = False
         if "spritesheet" in path_to_file:

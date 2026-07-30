@@ -7,6 +7,7 @@ from mediapipe.tasks.python import vision
 from Sprite import SpriteClass
 import Globals as gb
 import Accessories as ac
+import CustomGesturesStatic as cgs
 
 #left hand is detected first if both
 
@@ -33,15 +34,19 @@ class GesturesAll:
 
     def drawSkeleton(self,frame,hand_points):
         for point in hand_points:
-            cv2.circle(frame,ac.normalize(point.x,point.y),4,(0, 255, 0),-1)
+            cv2.circle(frame,ac.normalize2D(point.x,point.y),4,(0, 255, 0),-1)
         ac.drawConnections(hand_points,frame,self.connections)
 
-    def identifyCustomGesture(self,detected_hand_points):
-        pass
+    def identifyCustomGesture(self,detected_hand_points,hand_iden):
+        holder = cgs.indexFingerPointedANY(detected_hand_points,hand_iden)
+        if holder != "None":
+            print("Debug Print ",holder)
+            return holder
+        return "None"
 
     def identifyGesture(self,frame):
         self.detected_gestures = self.detector_gestures.recognize_for_video(self.mp_image,gb.time_secs)
-        left_name = right_name = "None"
+        left_name = right_name = single_name = "None"
         gb.left_landmarks = gb.right_landmarks = None
         if len(self.detected_gestures.gestures) == 2:
             left = self.detected_gestures.gestures[0]
@@ -51,15 +56,30 @@ class GesturesAll:
             if gb.DrawSkeleton:
                 self.drawSkeleton(frame,self.detected_hand_points_l)
                 self.drawSkeleton(frame,self.detected_hand_points_r)
-            left_name = left[0].category_name
-            right_name = right[0].category_name
+
+            if not gb.giveCustomGesturesPriority:
+                left_name = left[0].category_name
+                if left_name == "None":
+                    left_name = self.identifyCustomGesture(self.detected_hand_points_l,"left")
+                right_name = right[0].category_name
+                if right_name == "None":
+                    right_name = self.identifyCustomGesture(self.detected_hand_points_r,"right")
+
+            else:
+                left_name = self.identifyCustomGesture(self.detected_hand_points_l,"left")                
+                if left_name == "None":
+                    left_name = left[0].category_name
+                right_name = self.identifyCustomGesture(self.detected_hand_points_r,"right")
+                if right_name == "None":
+                    right_name = right[0].category_name
+
             if gb.printDebug:
                 if left_name == "None":
-                    print("Custom one starts here left")
+                    print("None on left")
                 else:
                     print("left : ",left_name)
                 if right_name == "None":
-                    print("Custom one starts here right")
+                    print("None on right")
                 else:
                     print("right : ",right_name)
 
@@ -70,17 +90,29 @@ class GesturesAll:
             if gb.DrawSkeleton:
                 self.drawSkeleton(frame,self.detected_hand_points)
             hand_iden = self._getHandSingle()
+
+            if not gb.giveCustomGesturesPriority:
+                single_name = top_gesture.category_name
+                if single_name == "None":
+                    single_name = self.identifyCustomGesture(self.detected_hand_points,hand_iden)
+            else:
+                single_name = self.identifyCustomGesture(self.detected_hand_points,hand_iden)                
+                if single_name == "None":
+                    single_name = top_gesture.category_name
+
             if gb.printDebug:
-                if top_gesture.category_name == "None":
-                    print("Custom one starts here")
+                if single_name == "None":
+                    print("None on single ",hand_iden)
                 else:
-                    print(hand_iden," , single : ",top_gesture.category_name)
+                    print(hand_iden," , single : ",single_name)
+
             if hand_iden == "left":
                 gb.left_landmarks = self.detected_hand_points
-                return top_gesture.category_name,"None"
+                return single_name,"None"
+
             elif hand_iden == "right":
                 gb.right_landmarks = self.detected_hand_points
-                return "None",top_gesture.category_name            
+                return "None",single_name            
             else:
                 return "None","None"
         return "None","None"
