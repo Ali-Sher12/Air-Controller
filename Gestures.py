@@ -27,10 +27,10 @@ class GesturesAll:
     def _getHandSingle(self):
         return self.detected_gestures.handedness[0][0].category_name.lower()
 
-    def drawSkeleton(self,frame,hand_points):
+    def drawSkeleton(self,frame,hand_points,hand_iden):
+        ac.drawConnections(hand_points,frame,self.connections,hand_iden)
         for point in hand_points:
             cv2.circle(frame,ac.normalize2D(point.x,point.y),4,(0, 255, 0),-1)
-        ac.drawConnections(hand_points,frame,self.connections)
 
     def identifyCustomGesture(self,detected_hand_points,hand_iden,built_in_closest):
         holder = cgs.indexFingerPointedANY(detected_hand_points,hand_iden,built_in_closest)
@@ -57,8 +57,10 @@ class GesturesAll:
                 gb.right_landmarks = self.detected_hand_points_r = self.detected_gestures.hand_landmarks[0]
 
             if gb.DrawSkeleton:
-                self.drawSkeleton(frame,self.detected_hand_points_l)
-                self.drawSkeleton(frame,self.detected_hand_points_r)
+                cgs.getExtendedFingers(self.detected_hand_points_l, "left")
+                cgs.getExtendedFingers(self.detected_hand_points_r, "right")
+                self.drawSkeleton(frame,self.detected_hand_points_l,"left")
+                self.drawSkeleton(frame,self.detected_hand_points_r,"right")
 
             if not gb.giveCustomGesturesPriority:
                 left_name = left[0].category_name
@@ -94,9 +96,10 @@ class GesturesAll:
         elif len(self.detected_gestures.gestures) == 1:
             top_gesture = self.detected_gestures.gestures[0][0]
             self.detected_hand_points = self.detected_gestures.hand_landmarks[0]
-            if gb.DrawSkeleton:
-                self.drawSkeleton(frame,self.detected_hand_points)
             hand_iden = self._getHandSingle()
+            if gb.DrawSkeleton:
+                cgs.getExtendedFingers(self.detected_hand_points, hand_iden)
+                self.drawSkeleton(frame,self.detected_hand_points,hand_iden)
 
             if not gb.giveCustomGesturesPriority:
                 single_name = top_gesture.category_name

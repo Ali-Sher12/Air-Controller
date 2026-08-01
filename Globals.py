@@ -20,3 +20,15 @@ enableFrontEnd = True
 
 leftMissing = True
 rightMissing = True
+
+leftRaised = [False,True,False,False,False]
+rightRaised = [False,False,False,True,False] # do we reset these in main? Lets see.
+
+
+FINGER_POINTS = {
+    0: (1, 2, 3, 4),      # thumb
+    1: (5, 6, 7, 8),      # index
+    2: (9, 10, 11, 12),   # middle
+    3: (13, 14, 15, 16),  # ring
+    4: (17, 18, 19, 20),  # pinky
+}

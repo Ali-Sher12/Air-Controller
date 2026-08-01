@@ -24,12 +24,31 @@ def getTimeSeconds():
 def getFlippedFrame(frame):
     return cv2.flip(frame, 1)
 
-def drawConnections(hand,frame,connections):
+def get_finger_index(point1, point2):
+    for finger_idx, points in gb.FINGER_POINTS.items():
+        if point1 in points and point2 in points:
+            return finger_idx
+    return None
+
+def get_line_color(point1, point2, raised):
+    finger_idx = get_finger_index(point1, point2)
+    if finger_idx is None:
+        return (255, 0, 0)  # blue for palm/wrist connections
+
+    if raised[finger_idx]:
+        return (0, 0, 255)  # red — raised
+    return (255, 0, 0)      # blue — not raised
+
+def drawConnections(hand, frame, connections, hand_iden):
     for connection in connections:
         start_point = hand[connection.start]
         end_point = hand[connection.end]
-        cv2.line(frame,normalize2D(start_point.x, start_point.y),normalize2D(end_point.x, end_point.y),(255, 0, 0),2)
-
+        color = None
+        if hand_iden == "left":
+            color = get_line_color(connection.start, connection.end, gb.leftRaised)
+        else:
+            color = get_line_color(connection.start, connection.end, gb.rightRaised)
+        cv2.line(frame,normalize2D(start_point.x, start_point.y),normalize2D(end_point.x, end_point.y),color, 2)
 
 def getVector(p1, p2):
     return (p2.x - p1.x, p2.y - p1.y, p2.z - p1.z)
@@ -40,9 +59,9 @@ def getDot_product(v1, v2):
 def getMagnitude(v):
     return math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
 
-def getAngle(p1, p2, p3):
+def getAngle(p1, p2, p3,horizaontal_base):
     # p3 is the base point. Can or cannot be collinear iwth p2 (toggle)
-    if gb.isAngleBaseHorizontal:
+    if horizaontal_base:
         p3.y = p2.y
     v1 = getVector(p2, p1)
     v2 = getVector(p2, p3)
