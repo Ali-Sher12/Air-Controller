@@ -7,9 +7,16 @@ waitKeyDelayMs = 1
 time_secs = 0
 doVideoStream = False
 printDebug = False
+
 DrawSkeleton = True
 RenderVideo = True
+
 Record = False
-pressKeys = False
+pressKeys = True
+
 giveCustomGesturesPriority = True
 isAngleBaseHorizontal = True
+enableFrontEnd = True
+
+leftMissing = True
+rightMissing = True

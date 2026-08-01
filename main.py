@@ -4,18 +4,33 @@ import Globals as gb
 import Accessories as ac
 from Gestures import GesturesAll
 import pydirectinput
-
+import sys
+from PyQt5.QtWidgets import QApplication
+import FrontEnd as QTFront
 
 if __name__ == "__main__":
+    app = None
+    window = None
+    out = None
+    if gb.enableFrontEnd:
+        app = QApplication(sys.argv)
+        window = QTFront.ColorTextWindow()
+
+
     url = 0
     pydirectinput.PAUSE = 0
     pydirectinput.FAILSAFE = False
     if gb.doVideoStream:
         url = "http://192.168.18.10:8080/video"
-    sampleSprite = SpriteClass("Assets/Images/sample.png",["Pointing_Up","Index_Up"])
-    sampleSprite.setPosition(0, 0)
-    sampleSprite.scale(1.5, 1.5)
-    sampleSprite.setOpacity(1)
+
+    #soulSprite = SpriteClass("Assets/Images/sample.png",["Pointing_Up","Index_Up","Left_Lean","Right_Lean"])
+    #soulSprite.setPosition(0, 0)
+    #soulSprite.scale(1, 1)
+    #soulSprite.setOpacity(1)
+    #tennaSprite = SpriteClass("Assets/Images/tenna.png",["Pointing_Up","Index_Up","Left_Lean","Right_Lean"])
+    #tennaSprite.setPosition(0, 90)
+    #tennaSprite.scale(1, 1)
+    #tennaSprite.setOpacity(1)    
 
     cap = cv2.VideoCapture(url)
     if not cap.isOpened():
@@ -26,7 +41,8 @@ if __name__ == "__main__":
 
     cap.set(cv2.CAP_PROP_FPS, 60)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    out = cv2.VideoWriter("output.mp4",cv2.VideoWriter_fourcc(*'mp4v'),fps,(gb.SCREEN_WIDTH, gb.SCREEN_HEIGHT))
+    if gb.Record:
+        out = cv2.VideoWriter("output.mp4",cv2.VideoWriter_fourcc(*'mp4v'),fps,(gb.SCREEN_WIDTH, gb.SCREEN_HEIGHT))
     #setup
     GestureObj = GesturesAll()
     while True:
@@ -41,63 +57,51 @@ if __name__ == "__main__":
 
         if gb.pressKeys:
             #causes youtube to freak out
-            if left_ges == "Pointing_Up" or right_ges == "Pointing_Up":
-                pydirectinput.keyDown('space')
+            if left_ges == "Left_Lean" or right_ges == "Left_Lean":
+                pydirectinput.keyDown('left')
             else:
-                pydirectinput.keyUp('space')
+                pydirectinput.keyUp('left')
 
-
-            if left_ges == "ILoveYou":
-                pydirectinput.keyDown('ctrl')
+            if left_ges == "ILoveYou" or right_ges == "ILoveYou":
+                pydirectinput.keyDown('enter')
             else:
-                pydirectinput.keyUp('ctrl')
+                pydirectinput.keyUp('enter')
 
-            if right_ges == "ILoveYou":
-                pydirectinput.mouseDown(button='left')
+            if left_ges == "Right_Lean" or right_ges == "Right_Lean":
+                pydirectinput.keyDown('right')
             else:
-                pydirectinput.mouseUp(button='left')                
+                pydirectinput.keyUp('right')
 
-            if left_ges == "Closed_Fist" or right_ges == "Closed_Fist":
-                pydirectinput.keyDown('f')
-            else:
-                pydirectinput.keyUp('f')
-
-            if right_ges == "Victory":
-                pydirectinput.keyDown('d')
-            else:
-                pydirectinput.keyUp('d')
-
-            if left_ges == "Victory":
+            if left_ges == "Open_Palm" or right_ges == "Open_Palm":
                 pydirectinput.keyDown('a')
             else:
                 pydirectinput.keyUp('a')            
 
-            if left_ges == "Open_Palm" or right_ges == "Open_Palm":
-                pydirectinput.keyDown('w')
-            else:
-                pydirectinput.keyUp('w')            
-
-            if left_ges == "Thumb_Up" or right_ges == "Thumb_Up":
-                pydirectinput.keyDown('s')
-            else:
-                pydirectinput.keyUp('s')
-
 
         if gb.RenderVideo:
-
-            if not sampleSprite.MoveL(left_ges):
-                sampleSprite.MoveR(right_ges)
-
-            frame = sampleSprite.draw(frame)
+#            if not soulSprite.MoveL(left_ges):
+#                soulSprite.MoveR(right_ges)
+#            if not tennaSprite.MoveR(right_ges):
+#                tennaSprite.MoveL(left_ges)
+#
+#
+#            frame = tennaSprite.draw(frame)            
+#            frame = soulSprite.draw(frame)
             frame = ac.getFlippedFrame(frame)
             cv2.imshow("Webcam", frame)
 
         if cv2.waitKey(gb.waitKeyDelayMs) == 27:
             break
-
-
         if gb.Record:
             out.write(frame)
+        if gb.enableFrontEnd:
+            window.Update(left_ges,right_ges)
+            window.show()
+            #important
+            gb.rightMissing = True
+            gb.leftMissing = True        
 
+if gb.enableFrontEnd:
+    sys.exit(app.exec())
 cap.release()
 cv2.destroyAllWindows()

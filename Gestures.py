@@ -25,17 +25,15 @@ class GesturesAll:
         self.mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
 
     def _getHandSingle(self):
-        if self.detected_gestures.hand_landmarks[0][4].x >= self.detected_gestures.hand_landmarks[0][20].x:
-            return "right"        
-        return "left"
+        return self.detected_gestures.handedness[0][0].category_name.lower()
 
     def drawSkeleton(self,frame,hand_points):
         for point in hand_points:
             cv2.circle(frame,ac.normalize2D(point.x,point.y),4,(0, 255, 0),-1)
         ac.drawConnections(hand_points,frame,self.connections)
 
-    def identifyCustomGesture(self,detected_hand_points,hand_iden):
-        holder = cgs.indexFingerPointedANY(detected_hand_points,hand_iden)
+    def identifyCustomGesture(self,detected_hand_points,hand_iden,built_in_closest):
+        holder = cgs.indexFingerPointedANY(detected_hand_points,hand_iden,built_in_closest)
         if holder != "None":
 #            print("Debug Print ",holder)
             return holder
@@ -46,10 +44,18 @@ class GesturesAll:
         left_name = right_name = single_name = "None"
         gb.left_landmarks = gb.right_landmarks = None
         if len(self.detected_gestures.gestures) == 2:
-            left = self.detected_gestures.gestures[0]
-            right = self.detected_gestures.gestures[1]
-            gb.left_landmarks = self.detected_hand_points_l = self.detected_gestures.hand_landmarks[0]
-            gb.right_landmarks = self.detected_hand_points_r = self.detected_gestures.hand_landmarks[1]
+
+            if self.detected_gestures.handedness[0][0].category_name.lower() == "left":
+                left = self.detected_gestures.gestures[0]
+                right = self.detected_gestures.gestures[1]
+                gb.left_landmarks = self.detected_hand_points_l = self.detected_gestures.hand_landmarks[0]
+                gb.right_landmarks = self.detected_hand_points_r = self.detected_gestures.hand_landmarks[1]
+            else:
+                left = self.detected_gestures.gestures[1]
+                right = self.detected_gestures.gestures[0]                
+                gb.left_landmarks = self.detected_hand_points_l = self.detected_gestures.hand_landmarks[1]
+                gb.right_landmarks = self.detected_hand_points_r = self.detected_gestures.hand_landmarks[0]
+
             if gb.DrawSkeleton:
                 self.drawSkeleton(frame,self.detected_hand_points_l)
                 self.drawSkeleton(frame,self.detected_hand_points_r)
@@ -57,16 +63,16 @@ class GesturesAll:
             if not gb.giveCustomGesturesPriority:
                 left_name = left[0].category_name
                 if left_name == "None":
-                    left_name = self.identifyCustomGesture(self.detected_hand_points_l,"left")
+                    left_name = self.identifyCustomGesture(self.detected_hand_points_l,"left",left[0].category_name)
                 right_name = right[0].category_name
                 if right_name == "None":
-                    right_name = self.identifyCustomGesture(self.detected_hand_points_r,"right")
+                    right_name = self.identifyCustomGesture(self.detected_hand_points_r,"right",right[0].category_name)
 
             else:
-                left_name = self.identifyCustomGesture(self.detected_hand_points_l,"left")                
+                left_name = self.identifyCustomGesture(self.detected_hand_points_l,"left",left[0].category_name)                
                 if left_name == "None":
                     left_name = left[0].category_name
-                right_name = self.identifyCustomGesture(self.detected_hand_points_r,"right")
+                right_name = self.identifyCustomGesture(self.detected_hand_points_r,"right",right[0].category_name)
                 if right_name == "None":
                     right_name = right[0].category_name
 
@@ -80,7 +86,11 @@ class GesturesAll:
                 else:
                     print("right : ",right_name)
 
+
+            gb.leftMissing = False
+            gb.rightMissing = False
             return left_name,right_name
+        
         elif len(self.detected_gestures.gestures) == 1:
             top_gesture = self.detected_gestures.gestures[0][0]
             self.detected_hand_points = self.detected_gestures.hand_landmarks[0]
@@ -91,9 +101,9 @@ class GesturesAll:
             if not gb.giveCustomGesturesPriority:
                 single_name = top_gesture.category_name
                 if single_name == "None":
-                    single_name = self.identifyCustomGesture(self.detected_hand_points,hand_iden)
+                    single_name = self.identifyCustomGesture(self.detected_hand_points,hand_iden,top_gesture.category_name)
             else:
-                single_name = self.identifyCustomGesture(self.detected_hand_points,hand_iden)                
+                single_name = self.identifyCustomGesture(self.detected_hand_points,hand_iden,top_gesture.category_name)                
                 if single_name == "None":
                     single_name = top_gesture.category_name
 
@@ -104,10 +114,14 @@ class GesturesAll:
                     print(hand_iden," , single : ",single_name)
 
             if hand_iden == "left":
+                gb.rightMissing = True
+                gb.leftMissing = False
                 gb.left_landmarks = self.detected_hand_points
                 return single_name,"None"
 
             elif hand_iden == "right":
+                gb.rightMissing = False
+                gb.leftMissing = True
                 gb.right_landmarks = self.detected_hand_points
                 return "None",single_name            
             else:
