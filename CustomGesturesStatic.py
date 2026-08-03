@@ -63,9 +63,8 @@ def indexFingerPointedANY(detected_hand_points,hand_iden,built_in_closest):
 #    print("thmb3_12 : ",thmb3_12)
 #    print("thmb4_12 : ",thmb4_12)
 
-    angle = ac.getAngle(detected_hand_points[8],detected_hand_points[5],detected_hand_points[9],gb.isAngleBaseHorizontal)
-    print(hand_iden, " angle : ",angle)        
     if 150>=ind_mid>=90 and 160>=ind_wrd>=100 and 175>=ind_pnky>=100 and 60>=thmb_mid>=0:# and 18<=thmb2_12<=43 and 18<=thmb3_12<=53 and 18<=thmb4_12<=55:
+        angle = ac.getAngle(detected_hand_points[8],detected_hand_points[5],detected_hand_points[9],gb.isAngleBaseHorizontal)
         if angle_min<angle<angle_max:
             return "Index_Up"
         elif (angle>=angle_max and hand_iden == "right") or (angle<=angle_min and hand_iden == "left"):

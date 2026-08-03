@@ -1,4 +1,5 @@
 import cv2
+import copy
 from Sprite import SpriteClass
 import Globals as gb
 import Accessories as ac
@@ -7,7 +8,7 @@ import pydirectinput
 import sys
 from PyQt5.QtWidgets import QApplication
 import FrontEnd as QTFront
-
+import FaceGestures as FaceGes
 if __name__ == "__main__":
     app = None
     window = None
@@ -44,16 +45,26 @@ if __name__ == "__main__":
     if gb.Record:
         out = cv2.VideoWriter("output.mp4",cv2.VideoWriter_fourcc(*'mp4v'),fps,(gb.SCREEN_WIDTH, gb.SCREEN_HEIGHT))
     #setup
+
+    bg_frame = cv2.imread("Assets/Images/haha.png")
+    bg_frame = cv2.resize(bg_frame, (gb.SCREEN_WIDTH,gb.SCREEN_HEIGHT))
+
     GestureObj = GesturesAll()
+    FaceGestureObj = FaceGes.FaceGestures()    
     while True:
         gb.time_secs = ac.getTimeSeconds()        
         ret, frame = cap.read()
+        gb.frame = copy.deepcopy(frame)
+        frame = copy.deepcopy(bg_frame)
+
         if not ret:
             continue
         #send frame
 
-        GestureObj.getImage(frame)
+        im = GestureObj.getImage()
         left_ges,right_ges = GestureObj.identifyGesture(frame)
+        FaceGestureObj.getImage(im)
+        FaceGestureObj.identifyGesture(frame)
 
         if gb.pressKeys:
             #causes youtube to freak out

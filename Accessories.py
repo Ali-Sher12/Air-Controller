@@ -2,6 +2,7 @@ import math
 import cv2
 import time
 import Globals as gb
+import copy
 #import win32gui
 #import win32con
 #import win32process
@@ -39,12 +40,19 @@ def get_line_color(point1, point2, raised):
         return (0, 0, 255)  # red — raised
     return (255, 0, 0)      # blue — not raised
 
-def drawConnections(hand, frame, connections, hand_iden):
+def drawConnections(part, frame, connections, iden):
+    if iden == "face":
+        for connection in connections:
+            start_point = part[connection[0]]
+            end_point = part[connection[1]]
+            cv2.line(frame,normalize2D(start_point.x, start_point.y),normalize2D(end_point.x, end_point.y),(0, 255, 0), 1)
+        return
+
     for connection in connections:
-        start_point = hand[connection.start]
-        end_point = hand[connection.end]
+        start_point = part[connection.start]
+        end_point = part[connection.end]
         color = None
-        if hand_iden == "left":
+        if iden == "left":
             color = get_line_color(connection.start, connection.end, gb.leftRaised)
         else:
             color = get_line_color(connection.start, connection.end, gb.rightRaised)
@@ -61,10 +69,11 @@ def getMagnitude(v):
 
 def getAngle(p1, p2, p3,horizaontal_base):
     # p3 is the base point. Can or cannot be collinear iwth p2 (toggle)
+    p3_use = copy.deepcopy(p3)
     if horizaontal_base:
-        p3.y = p2.y
+        p3_use.y = p2.y
     v1 = getVector(p2, p1)
-    v2 = getVector(p2, p3)
+    v2 = getVector(p2, p3_use)
     dot = getDot_product(v1, v2)
     mag = getMagnitude(v1) * getMagnitude(v2)
     cos_angle = dot / mag

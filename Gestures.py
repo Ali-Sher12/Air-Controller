@@ -21,8 +21,9 @@ class GesturesAll:
         self.handMissIndex = 0
         self.mp_image = None
 
-    def getImage(self,frame):
-        self.mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
+    def getImage(self):
+        self.mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=gb.frame)
+        return self.mp_image
 
     def _getHandSingle(self):
         return self.detected_gestures.handedness[0][0].category_name.lower()

@@ -12,11 +12,11 @@ DrawSkeleton = True
 RenderVideo = True
 
 Record = False
-pressKeys = True
+pressKeys = False
 
 giveCustomGesturesPriority = True
 isAngleBaseHorizontal = True
-enableFrontEnd = True
+enableFrontEnd = False
 
 leftMissing = True
 rightMissing = True
@@ -32,3 +32,6 @@ FINGER_POINTS = {
     3: (13, 14, 15, 16),  # ring
     4: (17, 18, 19, 20),  # pinky
 }
+
+facialThresh = 0.35
+frame = None
