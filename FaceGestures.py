@@ -10,6 +10,7 @@ import Accessories as ac
 import FaceMeshCustom as fc
 import pyautogui
 import MouseControls as mc
+import math
 
 """
 0 _neutral
@@ -129,6 +130,13 @@ class FaceGestures:
         self.yaw = 0
         self.pitch = 0
         self.roll = 0
+        self.smoothed_x = None
+        self.smoothed_y = None
+        self.prev_target_y = None
+        self.prev_target_p = None
+        self.carry_fwd_y = 0
+        self.carry_fwd_p = 0
+
         pyautogui.PAUSE = 0
 
     def getImage(self,done_frame):
@@ -172,29 +180,34 @@ class FaceGestures:
         self.face_landmarks = self.face_landmarker.detect_for_video(mp_image, gb.time_secs)
         if len(self.face_landmarks.face_landmarks) == 1:
             self.face_points = self.face_landmarks.face_landmarks[0]
-            self.drawSkeleton(frame)
+            if gb.DrawSkeleton:
+                self.drawSkeleton(frame)
             self.L_eyebrows,self.L_eyes,self.R_eyebrows,self.R_eyes,self.jaw,self.mouth = self.getRegionGestures()
             self.calc_yaw_pitch_roll()
-            # get yaw pitch and roll here
-            print("Yaw   : ",self.yaw)
-            print("Pitch : ",self.pitch)
-            print("Roll  : ",self.roll)
-            print(" ")
-            print(" ")
-            print(" ")
-            print(" ")
-            print(" ")
-            print(" ")
-
             return self.L_eyebrows,self.L_eyes,self.R_eyebrows,self.R_eyes,self.jaw,self.mouth        
         return "None","None","None","None","None","None"
 
     def move_mouse_smooth(self):
+        win_left, win_top, win_width, win_height = ac.get_active_window_bounds()
+
+        gb.ACTIVE_SCREEN_WIDTH = win_width
+        gb.ACTIVE_SCREEN_HEIGHT = win_height
+
         delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw,self.pitch,self.roll)
         target_x,target_y,target_Z = mc.remap(delta_yaw,delta_pitch,delta_roll)
-        target_x = max(1, min(gb.SCREEN_WIDTH - 2, target_x))
-        target_y = max(1, min(gb.SCREEN_HEIGHT - 2, target_y))
-        pyautogui.moveTo(target_x, target_y, duration=0)
+        target_x += win_left
+        target_y += win_top
+
+        if self.smoothed_x is None:
+            self.smoothed_x = target_x
+            self.smoothed_y = target_y
+        else:
+            self.smoothed_x += (target_x - self.smoothed_x) * gb.SMOOTHING
+            self.smoothed_y += (target_y - self.smoothed_y) * gb.SMOOTHING
+
+        final_x = max(win_left + 1, min(win_left + gb.ACTIVE_SCREEN_WIDTH - 2, self.smoothed_x))
+        final_y = max(win_top + 1, min(win_top + gb.ACTIVE_SCREEN_HEIGHT - 2, self.smoothed_y))
+        pyautogui.moveTo(final_x, final_y, duration=0)
 
     def move_mouse_mode_tedious(self):
         delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw,self.pitch,self.roll)
@@ -217,3 +230,38 @@ class FaceGestures:
 
         pyautogui.moveTo(target_x, target_y, duration=0)
 
+    def move_mouse_mode_3(self):
+        delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw,self.pitch,self.roll)
+        if abs(delta_yaw) < gb.MOUSE_DEADZONE:
+            delta_yaw = 0
+        if abs(delta_pitch) < gb.MOUSE_DEADZONE:
+            delta_pitch = 0
+        if abs(delta_roll) < gb.MOUSE_DEADZONE:
+            delta_roll = 0
+        target_y, target_p, target_r = mc.remap(delta_yaw, delta_pitch, delta_roll)
+        if self.smoothed_x is None:
+            self.smoothed_x = target_y
+            self.smoothed_y = target_p
+        else:
+            self.smoothed_x += (target_y - self.smoothed_x) * gb.SMOOTHING
+            self.smoothed_y += (target_p - self.smoothed_y) * gb.SMOOTHING
+
+        if self.prev_target_y is None:
+            self.prev_target_y = self.smoothed_x
+            self.prev_target_p = self.smoothed_y
+            return
+        dx = self.smoothed_x - self.prev_target_y
+        dy = self.smoothed_y - self.prev_target_p
+
+        self.carry_fwd_y += dx
+        dx = int(self.carry_fwd_y)
+        self.carry_fwd_y -= dx
+
+        self.carry_fwd_p += dy
+        dy = int(self.carry_fwd_p)
+        self.carry_fwd_p -= dy
+
+        mc.send_relative_mouse_move(int(dx), int(dy))
+
+        self.prev_target_y = self.smoothed_x
+        self.prev_target_p = self.smoothed_y

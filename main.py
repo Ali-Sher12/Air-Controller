@@ -1,5 +1,6 @@
 import cv2
 import copy
+import time
 from Sprite import SpriteClass
 import Globals as gb
 import Accessories as ac
@@ -52,6 +53,7 @@ if __name__ == "__main__":
 
     GestureObj = GesturesAll()
     FaceGestureObj = FaceGes.FaceGestures()    
+    prev_time = time.time()
     while True:
         gb.time_secs = ac.getTimeSeconds()        
         ret, frame = cap.read()
@@ -66,12 +68,13 @@ if __name__ == "__main__":
         left_ges,right_ges = GestureObj.identifyGesture(frame)
         FaceGestureObj.getImage(im)
         FaceGestureObj.identifyGesture(frame)
-        if gb.enableMouse:
-            FaceGestureObj.move_mouse_smooth()
-
         if left_ges == "ILoveYou" or right_ges == "ILoveYou":
             gb.enableMouse = not gb.enableMouse
 
+        if gb.enableMouse:
+            FaceGestureObj.move_mouse_mode_3()
+
+#        print(left_ges ," , ",right_ges)
         if gb.pressKeys:
             #causes youtube to freak out
             if left_ges == "Left_Lean" or right_ges == "Left_Lean":
@@ -79,20 +82,20 @@ if __name__ == "__main__":
             else:
                 pydirectinput.keyUp('left')
 
-            if left_ges == "ILoveYou" or right_ges == "ILoveYou":
-                pydirectinput.keyDown('enter')
-            else:
-                pydirectinput.keyUp('enter')
-
             if left_ges == "Right_Lean" or right_ges == "Right_Lean":
                 pydirectinput.keyDown('right')
             else:
                 pydirectinput.keyUp('right')
 
             if left_ges == "Open_Palm" or right_ges == "Open_Palm":
-                pydirectinput.keyDown('a')
+                pydirectinput.keyDown('up')
             else:
-                pydirectinput.keyUp('a')            
+                pydirectinput.keyUp('up')
+
+            if left_ges == "Closed_Fist" or right_ges == "Closed_Fist":
+                pydirectinput.keyDown('f')
+            else:
+                pydirectinput.keyUp('f')
 
 
         if gb.RenderVideo:
@@ -117,6 +120,13 @@ if __name__ == "__main__":
             #important
             gb.rightMissing = True
             gb.leftMissing = True        
+
+        current_time = time.time()
+        delta_time = current_time - prev_time        
+        if delta_time > 0:
+            fps = 1 / delta_time
+            print(f"FPS: {fps:.2f}", end="\r")            
+        prev_time = current_time
 
 if gb.enableFrontEnd:
     sys.exit(app.exec())

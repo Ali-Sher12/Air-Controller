@@ -1,22 +1,26 @@
 left_landmarks = None
 right_landmarks = None
 
-enableMouse = False
-
 MOUSE_SENSITIVITY = 5
-MOUSE_DEADZONE = 3
+MOUSE_DEADZONE = 1
+SMOOTHING = 0.23 # 0 - 1 range
 
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
+
+ACTIVE_SCREEN_WIDTH = 640
+ACTIVE_SCREEN_HEIGHT = 480
+
 waitKeyDelayMs = 1
 time_secs = 0
 doVideoStream = False
 printDebug = False
 
-DrawSkeleton = True
+DrawSkeleton = False
 RenderVideo = True
 
 Record = False
+enableMouse = True
 pressKeys = True
 
 giveCustomGesturesPriority = True

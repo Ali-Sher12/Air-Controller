@@ -1,4 +1,5 @@
 import Globals as gb
+import ctypes
 
 centerYaw = [-4,4]
 centerPitch = [-4,4]
@@ -49,7 +50,32 @@ def remap(y,p,r):
     retY = (y - yawRange[0]  ) / (yawRange[1]   - yawRange[0]  )
     retP = (p - pitchRange[0]) / (pitchRange[1] - pitchRange[0])
     retR = (r - rollRange[0] ) / (rollRange[1]  - rollRange[0] )        
-    retY = retY * (gb.SCREEN_WIDTH)
-    retP = retP * (gb.SCREEN_HEIGHT)
-    retR = retR * (gb.SCREEN_WIDTH) #placeholder
+    retY = retY * (gb.ACTIVE_SCREEN_WIDTH)
+    retP = retP * (gb.ACTIVE_SCREEN_HEIGHT)
+    retR = retR * (gb.ACTIVE_SCREEN_WIDTH) #placeholder
     return retY,retP,retR
+
+def send_relative_mouse_move(dx, dy):
+    extra = ctypes.c_ulong(0)
+    ii_ = ctypes.c_ulong(0)
+
+    class MOUSEINPUT(ctypes.Structure):
+        _fields_ = [
+            ("dx", ctypes.c_long),
+            ("dy", ctypes.c_long),
+            ("mouseData", ctypes.c_ulong),
+            ("dwFlags", ctypes.c_ulong),
+            ("time", ctypes.c_ulong),
+            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong))
+        ]
+
+    class INPUT(ctypes.Structure):
+        _fields_ = [
+            ("type", ctypes.c_ulong),
+            ("mi", MOUSEINPUT)
+        ]
+
+    MOUSEEVENTF_MOVE = 0x0001
+    mi = MOUSEINPUT(dx, dy, 0, MOUSEEVENTF_MOVE, 0, ctypes.pointer(extra))
+    inp = INPUT(0, mi)  # type=0 means INPUT_MOUSE
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(inp), ctypes.sizeof(inp))
