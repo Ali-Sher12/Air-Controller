@@ -9,6 +9,7 @@ import sys
 from PyQt5.QtWidgets import QApplication
 import FrontEnd as QTFront
 import FaceGestures as FaceGes
+
 if __name__ == "__main__":
     app = None
     window = None
@@ -55,7 +56,7 @@ if __name__ == "__main__":
         gb.time_secs = ac.getTimeSeconds()        
         ret, frame = cap.read()
         gb.frame = copy.deepcopy(frame)
-        frame = copy.deepcopy(bg_frame)
+        frame = copy.deepcopy(gb.frame)
 
         if not ret:
             continue
@@ -65,6 +66,11 @@ if __name__ == "__main__":
         left_ges,right_ges = GestureObj.identifyGesture(frame)
         FaceGestureObj.getImage(im)
         FaceGestureObj.identifyGesture(frame)
+        if gb.enableMouse:
+            FaceGestureObj.move_mouse_smooth()
+
+        if left_ges == "ILoveYou" or right_ges == "ILoveYou":
+            gb.enableMouse = not gb.enableMouse
 
         if gb.pressKeys:
             #causes youtube to freak out

@@ -1,4 +1,5 @@
 import sys
+from scipy.spatial.transform import Rotation as R
 import numpy as np
 import cv2
 import mediapipe as mp
@@ -7,6 +8,8 @@ from mediapipe.tasks.python import vision
 import Globals as gb
 import Accessories as ac
 import FaceMeshCustom as fc
+import pyautogui
+import MouseControls as mc
 
 """
 0 _neutral
@@ -86,6 +89,20 @@ import FaceMeshCustom as fc
 51  noseSneerRight
 """
 
+
+"""
+def calc_yaw_pitch_roll(self):
+    matrix = np.array(self.face_landmarks.facial_transformation_matrixes[0])
+    r = matrix[:3, :3]
+
+    rotation = R.from_matrix(r)
+    yaw, pitch, roll = rotation.as_euler('yxz', degrees=True)
+
+    self.yaw = yaw
+    self.pitch = pitch
+    self.roll = roll
+"""
+
 class FaceGestures:
     def __init__(self):
         self.base_options = python.BaseOptions(model_asset_path=r'Models/face_landmarker.task')
@@ -112,6 +129,7 @@ class FaceGestures:
         self.yaw = 0
         self.pitch = 0
         self.roll = 0
+        pyautogui.PAUSE = 0
 
     def getImage(self,done_frame):
         # get the image from hand gestures 
@@ -126,9 +144,11 @@ class FaceGestures:
         matrix = self.face_landmarks.facial_transformation_matrixes[0]
         matrix = np.array(matrix)
         r = matrix[:3, :3]
-        self.pitch = np.degrees(np.arcsin(-r[2, 0]))
-        self.yaw = np.degrees(np.arctan2(r[1, 0], r[0, 0]))
-        self.roll = np.degrees(np.arctan2(r[2, 1], r[2, 2]))
+#        self.yaw = np.degrees(np.arcsin(-r[2, 0]))
+#        self.roll = np.degrees(np.arctan2(r[1, 0], r[0, 0]))
+#        self.pitch = np.degrees(np.arctan2(r[2, 1], r[2, 2]))
+        rotation = R.from_matrix(r)
+        self.yaw, self.pitch, self.roll = rotation.as_euler('yxz', degrees=True)
 
     def getRegionGestures(self):
         results = []
@@ -168,4 +188,32 @@ class FaceGestures:
 
             return self.L_eyebrows,self.L_eyes,self.R_eyebrows,self.R_eyes,self.jaw,self.mouth        
         return "None","None","None","None","None","None"
-    
+
+    def move_mouse_smooth(self):
+        delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw,self.pitch,self.roll)
+        target_x,target_y,target_Z = mc.remap(delta_yaw,delta_pitch,delta_roll)
+        target_x = max(1, min(gb.SCREEN_WIDTH - 2, target_x))
+        target_y = max(1, min(gb.SCREEN_HEIGHT - 2, target_y))
+        pyautogui.moveTo(target_x, target_y, duration=0)
+
+    def move_mouse_mode_tedious(self):
+        delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw,self.pitch,self.roll)
+        if abs(delta_yaw) < gb.MOUSE_DEADZONE:
+            delta_yaw = 0
+        if abs(delta_pitch) < gb.MOUSE_DEADZONE:
+            delta_pitch = 0
+        if abs(delta_roll) < gb.MOUSE_DEADZONE:
+            delta_roll = 0
+        move_x = delta_yaw * gb.MOUSE_SENSITIVITY
+        move_y = delta_pitch * gb.MOUSE_SENSITIVITY
+
+        current_x, current_y = pyautogui.position()
+        target_x = current_x + move_x
+        target_y = current_y + move_y
+
+        # Clamp so we never actually touch the edge (leave 1px buffer)
+        target_x = max(1, min(gb.SCREEN_WIDTH - 2, target_x))
+        target_y = max(1, min(gb.SCREEN_HEIGHT - 2, target_y))
+
+        pyautogui.moveTo(target_x, target_y, duration=0)
+

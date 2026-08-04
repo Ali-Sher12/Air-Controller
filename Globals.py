@@ -1,6 +1,11 @@
 left_landmarks = None
 right_landmarks = None
 
+enableMouse = False
+
+MOUSE_SENSITIVITY = 5
+MOUSE_DEADZONE = 3
+
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 waitKeyDelayMs = 1
@@ -12,7 +17,7 @@ DrawSkeleton = True
 RenderVideo = True
 
 Record = False
-pressKeys = False
+pressKeys = True
 
 giveCustomGesturesPriority = True
 isAngleBaseHorizontal = True
