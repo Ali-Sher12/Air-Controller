@@ -132,10 +132,10 @@ class FaceGestures:
         self.roll = 0
         self.smoothed_x = None
         self.smoothed_y = None
+        self.prev_target_x = None
         self.prev_target_y = None
-        self.prev_target_p = None
+        self.carry_fwd_x = 0
         self.carry_fwd_y = 0
-        self.carry_fwd_p = 0
 
         pyautogui.PAUSE = 0
 
@@ -187,7 +187,11 @@ class FaceGestures:
             return self.L_eyebrows,self.L_eyes,self.R_eyebrows,self.R_eyes,self.jaw,self.mouth        
         return "None","None","None","None","None","None"
 
-    def move_mouse_smooth(self):
+#################################################################################
+############    handle edge case in all, literally the edge case   ##############
+#################################################################################
+
+    def move_mouse_absolute_free(self):
         win_left, win_top, win_width, win_height = ac.get_active_window_bounds()
 
         gb.ACTIVE_SCREEN_WIDTH = win_width
@@ -209,7 +213,41 @@ class FaceGestures:
         final_y = max(win_top + 1, min(win_top + gb.ACTIVE_SCREEN_HEIGHT - 2, self.smoothed_y))
         pyautogui.moveTo(final_x, final_y, duration=0)
 
-    def move_mouse_mode_tedious(self):
+    def move_mouse_mode_vanilla_free(self):
+        #make it less sensitive
+        win_left, win_top, win_width, win_height = ac.get_active_window_bounds()
+        delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw, self.pitch, self.roll)
+
+        if self.smoothed_x is None:
+            self.smoothed_x = delta_yaw
+            self.smoothed_y = delta_pitch
+        else:
+            self.smoothed_x += (delta_yaw - self.smoothed_x) * gb.SMOOTHING
+            self.smoothed_y += (delta_pitch - self.smoothed_y) * gb.SMOOTHING
+
+        delta_yaw = self.smoothed_x
+        delta_pitch = self.smoothed_y
+
+        if abs(delta_yaw) < gb.MOUSE_DEADZONE:
+            delta_yaw = 0
+        if abs(delta_pitch) < gb.MOUSE_DEADZONE:
+            delta_pitch = 0
+        move_x = delta_yaw * gb.MOUSE_SENSITIVITY
+        move_y = delta_pitch * gb.MOUSE_SENSITIVITY
+        current_x, current_y = pyautogui.position()
+        target_x = current_x + move_x
+        target_y = current_y + move_y
+        target_x = max(win_left + 1, min(win_left + win_width - 2, target_x))
+        target_y = max(win_top + 1, min(win_top + win_height - 2, target_y))
+
+        pyautogui.moveTo(target_x, target_y, duration=0)
+
+    def move_mouse_absolute_centerfixed(self):
+        # bring to center issue
+        win_left, win_top, win_width, win_height = ac.get_active_window_bounds()
+        gb.ACTIVE_SCREEN_WIDTH = win_width
+        gb.ACTIVE_SCREEN_HEIGHT = win_height
+
         delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw,self.pitch,self.roll)
         if abs(delta_yaw) < gb.MOUSE_DEADZONE:
             delta_yaw = 0
@@ -217,6 +255,63 @@ class FaceGestures:
             delta_pitch = 0
         if abs(delta_roll) < gb.MOUSE_DEADZONE:
             delta_roll = 0
+        target_x, target_y, target_r = mc.remap(delta_yaw, delta_pitch, delta_roll)
+        if self.smoothed_x is None:
+            self.smoothed_x = target_x
+            self.smoothed_y = target_y
+        else:
+            self.smoothed_x += (target_x - self.smoothed_x) * gb.SMOOTHING
+            self.smoothed_y += (target_y - self.smoothed_y) * gb.SMOOTHING
+
+        if self.prev_target_x is None:
+            self.prev_target_x = self.smoothed_x
+            self.prev_target_y = self.smoothed_y
+            return
+        dx = self.smoothed_x - self.prev_target_x
+        dy = self.smoothed_y - self.prev_target_y
+
+        self.carry_fwd_x += dx
+        dx = int(self.carry_fwd_x)
+        self.carry_fwd_x -= dx
+
+        self.carry_fwd_y += dy
+        dy = int(self.carry_fwd_y)
+        self.carry_fwd_y -= dy
+
+        current_x, current_y = pyautogui.position()
+        target_x_screen = current_x + dx
+        target_y_screen = current_y + dy
+
+        clamped_x = max(win_left + 1, min(win_left + win_width - 2, target_x_screen))
+        clamped_y = max(win_top + 1, min(win_top + win_height - 2, target_y_screen))
+
+        dx = int(clamped_x - current_x)
+        dy = int(clamped_y - current_y)
+
+        mc.send_relative_mouse_move(dx, dy)
+
+        self.prev_target_x = self.smoothed_x
+        self.prev_target_y = self.smoothed_y
+
+    def move_mouse_mode_vanilla_centerfixed(self):
+        # same as its free
+        win_left, win_top, win_width, win_height = ac.get_active_window_bounds()
+        delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw, self.pitch, self.roll)
+        if self.smoothed_x is None:
+            self.smoothed_x = delta_yaw
+            self.smoothed_y = delta_pitch
+        else:
+            self.smoothed_x += (delta_yaw - self.smoothed_x) * gb.SMOOTHING
+            self.smoothed_y += (delta_pitch - self.smoothed_y) * gb.SMOOTHING
+
+        delta_yaw = self.smoothed_x
+        delta_pitch = self.smoothed_y
+
+        if abs(delta_yaw) < gb.MOUSE_DEADZONE:
+            delta_yaw = 0
+        if abs(delta_pitch) < gb.MOUSE_DEADZONE:
+            delta_pitch = 0
+
         move_x = delta_yaw * gb.MOUSE_SENSITIVITY
         move_y = delta_pitch * gb.MOUSE_SENSITIVITY
 
@@ -224,44 +319,18 @@ class FaceGestures:
         target_x = current_x + move_x
         target_y = current_y + move_y
 
-        # Clamp so we never actually touch the edge (leave 1px buffer)
-        target_x = max(1, min(gb.SCREEN_WIDTH - 2, target_x))
-        target_y = max(1, min(gb.SCREEN_HEIGHT - 2, target_y))
+        target_x = max(win_left + 1, min(win_left + win_width - 2, target_x))
+        target_y = max(win_top + 1, min(win_top + win_height - 2, target_y))
 
-        pyautogui.moveTo(target_x, target_y, duration=0)
+        dx = target_x - current_x
+        dy = target_y - current_y
 
-    def move_mouse_mode_3(self):
-        delta_yaw, delta_pitch, delta_roll = mc.getDeltas(self.yaw,self.pitch,self.roll)
-        if abs(delta_yaw) < gb.MOUSE_DEADZONE:
-            delta_yaw = 0
-        if abs(delta_pitch) < gb.MOUSE_DEADZONE:
-            delta_pitch = 0
-        if abs(delta_roll) < gb.MOUSE_DEADZONE:
-            delta_roll = 0
-        target_y, target_p, target_r = mc.remap(delta_yaw, delta_pitch, delta_roll)
-        if self.smoothed_x is None:
-            self.smoothed_x = target_y
-            self.smoothed_y = target_p
-        else:
-            self.smoothed_x += (target_y - self.smoothed_x) * gb.SMOOTHING
-            self.smoothed_y += (target_p - self.smoothed_y) * gb.SMOOTHING
+        self.carry_fwd_x += dx
+        dx = int(self.carry_fwd_x)
+        self.carry_fwd_x -= dx
 
-        if self.prev_target_y is None:
-            self.prev_target_y = self.smoothed_x
-            self.prev_target_p = self.smoothed_y
-            return
-        dx = self.smoothed_x - self.prev_target_y
-        dy = self.smoothed_y - self.prev_target_p
+        self.carry_fwd_y += dy
+        dy = int(self.carry_fwd_y)
+        self.carry_fwd_y -= dy
 
-        self.carry_fwd_y += dx
-        dx = int(self.carry_fwd_y)
-        self.carry_fwd_y -= dx
-
-        self.carry_fwd_p += dy
-        dy = int(self.carry_fwd_p)
-        self.carry_fwd_p -= dy
-
-        mc.send_relative_mouse_move(int(dx), int(dy))
-
-        self.prev_target_y = self.smoothed_x
-        self.prev_target_p = self.smoothed_y
+        mc.send_relative_mouse_move(dx, dy)

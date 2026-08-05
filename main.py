@@ -42,7 +42,7 @@ if __name__ == "__main__":
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, gb.SCREEN_WIDTH )
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,gb.SCREEN_HEIGHT)
 
-    cap.set(cv2.CAP_PROP_FPS, 60)
+    cap.set(cv2.CAP_PROP_FPS, 120)
     fps = cap.get(cv2.CAP_PROP_FPS)
     if gb.Record:
         out = cv2.VideoWriter("output.mp4",cv2.VideoWriter_fourcc(*'mp4v'),fps,(gb.SCREEN_WIDTH, gb.SCREEN_HEIGHT))
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             gb.enableMouse = not gb.enableMouse
 
         if gb.enableMouse:
-            FaceGestureObj.move_mouse_mode_3()
+            FaceGestureObj.move_mouse_mode_vanilla_centerfixed()
 
 #        print(left_ges ," , ",right_ges)
         if gb.pressKeys:
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         delta_time = current_time - prev_time        
         if delta_time > 0:
             fps = 1 / delta_time
-            print(f"FPS: {fps:.2f}", end="\r")            
+            print(f"FPS: {fps:.2f}")#, end="\r")
         prev_time = current_time
 
 if gb.enableFrontEnd:

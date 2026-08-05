@@ -16,7 +16,7 @@ time_secs = 0
 doVideoStream = False
 printDebug = False
 
-DrawSkeleton = False
+DrawSkeleton = True
 RenderVideo = True
 
 Record = False
